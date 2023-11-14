@@ -1,0 +1,29 @@
+#!/bin/sh
+# base64 wrapper around shaXXXsum
+
+set -e
+
+
+if [ "$1" = "-z" ]; then
+    export EOL=z
+    shift
+fi
+
+[ "$#" -gt 0 ] || exec "$0" -
+
+p="${0##*/}"
+p="${p%base64}sum"
+hash "$p"
+
+for f in "$@"; do
+    if [ ! -f "$f" -a "$f" != "-" ]; then
+        echo "Usage: $0 [-z] [file ...]"
+        exit 2
+    fi
+    sum="$("$p" "$f" | cut -f1 -d' ' - | xxd -r -ps | base64 -w 0)"
+    if [ "$EOL" != "z" ]; then
+        echo "$sum $f"
+    else
+        echo -n "$sum $f\0"
+    fi
+done
